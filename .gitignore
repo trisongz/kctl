@@ -1,0 +1,15 @@
+
+cache*
+*.DS_Store
+tests*
+__pycache__*
+*logs
+*dist
+*build
+**build.sh
+*test.py
+*.egg-info*
+*.vscode
+*test_ops
+**.kctlcache**
+**test.ipynb
