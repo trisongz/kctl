@@ -191,7 +191,7 @@ class KctlContextCfg:
 
     def validate_fleet_url(self, url: str):
         if 'management.cattle.io.clusterregistrationtokens' in url: return url
-        if self.api_version == 'v1' and self.rancher_fleet_name not in url: url += f'/{self.rancher_fleet_name}'
+        if self.api_version == 'v1' and self.rancher_fleet_name not in url and 'k8s/cluster' not in url: url += f'/{self.rancher_fleet_name}'
         return url
 
 
