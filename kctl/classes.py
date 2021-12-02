@@ -59,6 +59,21 @@ class RestObject(object):
     @property
     def json(self): return Json.dumps(self.data_dict(), ensure_ascii=False, indent=2)
     
+    def update_data(self, client):
+        """ Method to update the obj using a PUT request.
+            args:
+                - client: likely KctlClient.v1
+        """
+        client.update_data(self)
+    
+    async def async_update_data(self, client):
+        """ Async Method to update the obj using a PUT request.
+            args:
+                - client: likely KctlClient.v1
+        """
+        await client.async_update_data(self)
+
+
     @timed_cache(10)
     def as_modelcls(self) -> Type[BaseModel]:
         d = self.data_dict()

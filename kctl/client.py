@@ -188,6 +188,10 @@ class KctlBaseClient:
     def update(self, obj, *args, **kw):
         url = obj.links.self
         return self._put_and_retry(url, *args, **kw)
+    
+    def update_data(self, obj, *args, **kw):
+        url = obj.links.self
+        return self._put_and_retry(url, obj, *args, **kw)
 
     def _put_and_retry(self, url, *args, **kw):
         retries = kw.get('retries', 3)
@@ -268,6 +272,10 @@ class KctlBaseClient:
     async def async_update(self, obj, *args, **kw):
         url = obj.links.self
         return await self._async_put_and_retry(url, *args, **kw)
+    
+    async def async_update_data(self, obj, *args, **kw):
+        url = obj.links.self
+        return await self._async_put_and_retry(url, obj, *args, **kw)
     
     async def _async_put_and_retry(self, url, *args, **kw):
         retries = kw.get('retries', 3)
@@ -369,32 +377,42 @@ class KctlBaseClient:
         bindings = [
             ('list', 'collectionMethods', GET_METHOD, self.list),
             ('by_id', 'collectionMethods', GET_METHOD, self.by_id),
-            ('update_by_id', 'resourceMethods', PUT_METHOD, self.update_by_id),
             ('create', 'collectionMethods', POST_METHOD, self.create),
+            #('update', 'resourceMethods', PUT_METHOD, self.update),
+            ('update_by_id', 'resourceMethods', PUT_METHOD, self.update_by_id),
+            #('update_data', 'resourceMethods', PUT_METHOD, self.update),
         ]
         async_bindings = [
             ('async_list', 'collectionMethods', GET_METHOD, self.async_list),
             ('async_by_id', 'collectionMethods', GET_METHOD, self.async_by_id),
-            ('async_update_by_id', 'resourceMethods', PUT_METHOD, self.async_update_by_id),
             ('async_create', 'collectionMethods', POST_METHOD, self.async_create),
+            #('async_update', 'resourceMethods', PUT_METHOD, self.async_update),
+            ('async_update_by_id', 'resourceMethods', PUT_METHOD, self.async_update_by_id),
         ]
 
         for type_name, typ in schema.types.items():
             for name_variant in self._type_name_variants(type_name):
-                for method_name, type_collection, test_method, m in bindings:
+                for (method_name, type_collection, test_method, m), (async_method_name, async_type_collection, async_test_method, async_m) in zip(bindings, async_bindings):
                     # double lambda for lexical binding hack, I'm sure there's
                     # a better way to do this
                     def cb_bind(type_name=type_name, method=m):
                         def _cb(*args, **kw):
                             return method(type_name, *args, **kw)
                         return _cb
+                    def async_cb_bind(type_name=type_name, method=async_m):
+                        async def _cb(*args, **kw):
+                            return await method(type_name, *args, **kw)
+                        return _cb
+
                     if test_method in getattr(typ, type_collection, []): setattr(self, '_'.join([method_name, name_variant]), cb_bind())
-                for method_name, type_collection, test_method, m in async_bindings:
-                    def cb_bind(type_name=type_name, method=m):
-                        def _cb(*args, **kw):
-                            return method(type_name, *args, **kw)
-                        return  _cb
-                    if test_method in getattr(typ, type_collection, []): setattr(self, '_'.join([method_name, name_variant]), cb_bind())
+                    if async_test_method in getattr(typ, async_type_collection, []): setattr(self, '_'.join([async_method_name, name_variant]), async_cb_bind())
+
+                #for method_name, type_collection, test_method, m in async_bindings:
+                #    def cb_bind(type_name=type_name, method=m):
+                #        def _cb(*args, **kw):
+                #            return method(type_name, *args, **kw)
+                #        return  _cb
+                #    if test_method in getattr(typ, type_collection, []): setattr(self, '_'.join([method_name, name_variant]), cb_bind())
 
     def _get_schema_hash(self):
         h = hashlib.new('sha1')
